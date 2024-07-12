@@ -1,12 +1,10 @@
 # The Docker image that will be used to build your app
-image: node:lts
+image: node:alpine
 
 pages:
-    stage: deploy
-    script:
-        — echo "nothing"
-    artifacts:
-        paths:
-            — public
-    only:
-        — master
+  stage: deploy
+  script:
+      - echo "nothing"
+  artifacts:
+    paths:
+      - public
