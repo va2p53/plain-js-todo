@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf=8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Personal Task Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="stylesheet" href="reset.css" />
+    <link rel="stylesheet" href="index.css" />
+  </head>
+  <body>
+    <div id="root">
+      <h1 class="title">Personal Task Manager</h1>
+      <div class="content">
+        <div class="tasks">
+          <div class="add-task">
+            <input
+              type="text"
+              placeholder="New task name"
+              class="add-task-input"
+            />
+            <button class="add-task-button">New Task</button>
+          </div>
+          <ul class="tasks-list"></ul>
+        </div>
+        <div class="task-content">
+          <h2 class="title"></h2>
+          <h3 class="status"></h3>
+          <div class="add-subtask">
+            <input
+              type="text"
+              placeholder="New subtask name"
+              class="add-subtask-input"
+            />
+            <button class="add-subtask-button">New subtask</button>
+          </div>
+          <ul class="subtasks-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <script src="./index.js"></script>
+  </body>
+</html>

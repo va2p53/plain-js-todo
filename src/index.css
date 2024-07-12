@@ -1,0 +1,297 @@
+/*general rules */
+:root {
+  --color-primary: chocolate;
+  --color-highlight: rgba(223, 183, 8, 0.945);
+  --color-bg-1: lightskyblue;
+  --color-bg-input: white;
+  --color-text-dark: black;
+  --color-text-light: white;
+
+  --color-scrollbar-track: #99999983;
+  --color-scrollbar-thumb: #333;
+}
+
+body {
+  font-family: "Roboto";
+  color: var(--color-text-dark);
+  display: flex;
+  flex-direction: column;
+
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+  scrollbar-width: thin;
+}
+
+body::-webkit-scrollbar{
+  /* width: 10px;
+  height: 10px; */
+}
+
+body::-webkit-scrollbar-thumb{
+  background: var(--color-scrollbar-thumb);
+}
+
+body::-webkit-scrollbar-track{
+  background: var(--color-scrollbar-track);
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  height: 100vh;
+  min-height: 400px;
+}
+
+button {
+  border: none;
+  border-radius: 4px;
+  background-color: var(--color-primary);
+  color: var(--color-text-light);
+
+  min-width: 2rem;
+  min-height: 2rem;
+
+  padding: 0.25rem 0.5rem;
+
+  transition: all ease-out 100ms;
+}
+
+button:hover {
+  background-color: var(--color-highlight);
+}
+
+button:active {
+  transform: scale(1.05);
+}
+
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: var(--color-bg-input);
+  margin: 0;
+
+  font: inherit;
+  color: currentColor;
+  width: 1rem;
+  height: 1rem;
+
+  border: 2px solid var(--color-primary);
+
+  border-radius: 4px;
+
+  display: grid;
+  place-content: center;
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  transform: scale(0);
+  transition: transform 100ms ease-in;
+  background: var(--color-primary);
+}
+
+input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+input[type="text"] {
+  font-size: 16px;
+  font-size: max(16px, 1em);
+  font-family: inherit;
+  padding: 0.25em 0.5em;
+  background-color: var(--color-bg-input);
+  border: 2px solid var(--color-primary);
+  border-radius: 4px;
+}
+
+input[type="text"]:focus {
+  outline: 2px solid var(--color-highlight);
+}
+
+.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.covering-input {
+  position: absolute;
+  inset: 0;
+}
+
+.dragged {
+  opacity: 0.5;
+}
+
+.drag-over {
+  border-bottom: 4px solid var(--color-highlight);
+}
+
+/* header */
+h1.title {
+  padding: 0.5rem;
+}
+
+/* main container */
+.content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+.tasks {
+  background: paleturquoise;
+  flex-shrink: 0;
+  flex-grow: 0;
+  width: 300px;
+
+  padding: 0.5rem;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 1rem;
+}
+
+.add-task,
+.add-subtask {
+  display: flex;
+  flex-direction: column;
+}
+
+.tasks-list {
+  list-style: none;
+  padding: 0;
+  flex-grow: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 0.25rem;
+
+  overflow-y: scroll;
+
+  /* overflow-x: visible; won't work in some browsers.
+    In short. When we set axis A overflow to anything but 
+    visible or auto, then if another axis B is to visible
+    in most browsers. Here is fast trick to stop clipping of 
+    selected task elements in our case. We give negative margin
+    in translation direction and same positive padding.
+    But it will mess scrollbar position, so we give just enough.
+  */
+  margin-right: -0.4rem;
+  padding-right: 0.4rem;
+}
+
+.task {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+
+  border-radius: 4px;
+
+  transition: all ease-in 100ms;
+}
+
+.task,
+.subtask {
+  color: var(--color-text-dark);
+  background: var(--color-bg-1);
+}
+
+.tasks-list, .subtasks-list{
+  scrollbar-width: thin;
+}
+
+.task .title {
+  flex-grow: 2;
+  padding: 0 0.5rem;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+}
+
+.task button {
+  flex-shrink: 0;
+}
+
+.task.selected {
+  transform: translateX(0.25rem);
+}
+
+/* task content */
+.task-content {
+  background: thistle;
+  flex-grow: 1;
+  width: 200px;
+
+  padding: 0.5em;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.task-content > .title {
+  position: relative;
+}
+
+.subtasks-list {
+  list-style: none;
+  padding: 0;
+  flex-grow: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 0.25rem;
+
+  overflow-y: scroll;
+}
+
+.subtask {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+
+  border-radius: 4px;
+
+  position: relative;
+}
+
+.subtask:has(.subtask_checkbox:checked) {
+  filter: grayscale(0.7);
+}
+
+.subtask .title {
+  flex-grow: 1;
+  padding: 0 0.5rem;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+}
+
+.subtask button,
+.subtask .subtask_checkbox {
+  flex-shrink: 0;
+}
+
+.subtask .subtask_checkbox {
+  aspect-ratio: 1;
+  height: 2rem;
+  width: 2rem;
+}
+
+.subtask .subtask_checkbox::before {
+  width: calc(2rem - 0.25rem);
+  height: calc(2rem - 0.25rem);
+}
