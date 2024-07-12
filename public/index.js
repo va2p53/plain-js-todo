@@ -161,24 +161,6 @@ function onClickTask(event) {
 }
 
 /**
- * Visually selects task element in tasks list
- * @param {string} id
- */
-function visuallySelectTaskElement(id) {
-  if (!id) {
-    return;
-  }
-
-  for (const child of tasksListElem.children) {
-    if (child.getAttribute("data-id") === id) {
-      child.classList.add("selected");
-    } else {
-      child.classList.remove("selected");
-    }
-  }
-}
-
-/**
  * Invokes onAddNewSubtask if enter was pressed in target
  * @param {Event} event keypress event
  */
@@ -677,6 +659,7 @@ function createTaskElement(title, id) {
   elem.setAttribute("data-id", id);
   elem.setAttribute("data-type", "task");
   elem.setAttribute("draggable", true);
+  elem.setAttribute("data-tooltip", title);
   elem.addEventListener("click", onClickTask);
   elem.addEventListener("dragend", onDragEnd);
   elem.addEventListener("drop", onDrop);
@@ -713,6 +696,7 @@ function createSubtaskElement(title, id, status = false) {
   elem.setAttribute("data-id", id);
   elem.setAttribute("data-type", "subtask");
   elem.setAttribute("draggable", true);
+  elem.setAttribute("data-tooltip", title);
   elem.addEventListener("dragend", onDragEnd);
   elem.addEventListener("drop", onDrop);
   elem.addEventListener("dragover", onDragOver);
@@ -873,4 +857,22 @@ function updateTaskList() {
 function updateTaskStatusElem(task) {
   const statistic = getTaskStatistic(task);
   taskStatusElem.textContent = `Subtasks: ${statistic.total}. Done: ${statistic.done}.`;
+}
+
+/**
+ * Visually selects task element in tasks list
+ * @param {string} id
+ */
+function visuallySelectTaskElement(id) {
+  if (!id) {
+    return;
+  }
+
+  for (const child of tasksListElem.children) {
+    if (child.getAttribute("data-id") === id) {
+      child.classList.add("selected");
+    } else {
+      child.classList.remove("selected");
+    }
+  }
 }

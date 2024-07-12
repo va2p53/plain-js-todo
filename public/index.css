@@ -1,14 +1,17 @@
 /*general rules */
 :root {
-  --color-primary: chocolate;
+  --color-primary: #d2691e;
   --color-highlight: rgba(223, 183, 8, 0.945);
-  --color-bg-1: lightskyblue;
+  --color-bg-1: #6cd4ff;
   --color-bg-input: white;
   --color-text-dark: black;
   --color-text-light: white;
 
   --color-scrollbar-track: #99999983;
   --color-scrollbar-thumb: #333;
+
+  --color-bg-3: #d496a7;
+  --color-bg-2: #F1DEDE;
 }
 
 body {
@@ -21,16 +24,11 @@ body {
   scrollbar-width: thin;
 }
 
-body::-webkit-scrollbar{
-  /* width: 10px;
-  height: 10px; */
-}
-
-body::-webkit-scrollbar-thumb{
+body::-webkit-scrollbar-thumb {
   background: var(--color-scrollbar-thumb);
 }
 
-body::-webkit-scrollbar-track{
+body::-webkit-scrollbar-track {
   background: var(--color-scrollbar-track);
 }
 
@@ -117,6 +115,33 @@ input[type="text"]:focus {
   outline: 2px solid var(--color-highlight);
 }
 
+[data-tooltip]:after {
+  z-index: 1000;
+  padding: 8px;
+  width: 160px;
+  word-wrap: break-word;
+  background-color: rgba(0, 0, 0, 0.589);
+  color: var(--color-text-light);
+  content: attr(data-tooltip);
+  font-size: 0.8rem;
+  line-height: 1rem;
+  transition: all ease-in 100ms;
+  transition-delay: 700ms;
+}
+
+[data-tooltip]:after {
+  position: absolute;
+  visibility: hidden;
+  opacity: 0;
+  transform: translate(50%, calc(100% / 2 + 1rem));
+  pointer-events: none;
+}
+
+[data-tooltip]:hover:after {
+  visibility: visible;
+  opacity: 1;
+}
+
 .hidden {
   visibility: hidden;
   pointer-events: none;
@@ -149,7 +174,7 @@ h1.title {
 }
 
 .tasks {
-  background: paleturquoise;
+  background: var(--color-bg-3);
   flex-shrink: 0;
   flex-grow: 0;
   width: 300px;
@@ -197,19 +222,16 @@ h1.title {
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: center;
-
+  position: relative;
   border-radius: 4px;
+  color: var(--color-text-dark);
+  background: var(--color-bg-1);
 
   transition: all ease-in 100ms;
 }
 
-.task,
-.subtask {
-  color: var(--color-text-dark);
-  background: var(--color-bg-1);
-}
-
-.tasks-list, .subtasks-list{
+.tasks-list,
+.subtasks-list {
   scrollbar-width: thin;
 }
 
@@ -226,11 +248,12 @@ h1.title {
 
 .task.selected {
   transform: translateX(0.25rem);
+  z-index: 10;
 }
 
 /* task content */
 .task-content {
-  background: thistle;
+  background: var(--color-bg-2);
   flex-grow: 1;
   width: 200px;
 
@@ -267,10 +290,13 @@ h1.title {
   border-radius: 4px;
 
   position: relative;
+  color: var(--color-text-dark);
+  background: var(--color-bg-1);
 }
 
 .subtask:has(.subtask_checkbox:checked) {
   filter: grayscale(0.7);
+  z-index: 10;
 }
 
 .subtask .title {
