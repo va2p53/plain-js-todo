@@ -115,6 +115,10 @@ input[type="text"]:focus {
   outline: 2px solid var(--color-highlight);
 }
 
+[data-tooltip]:hover {
+  z-index: 10;
+}
+
 [data-tooltip]:after {
   z-index: 1000;
   padding: 8px;
@@ -125,8 +129,6 @@ input[type="text"]:focus {
   content: attr(data-tooltip);
   font-size: 0.8rem;
   line-height: 1rem;
-  transition: all ease-in 100ms;
-  transition-delay: 700ms;
 }
 
 [data-tooltip]:after {
@@ -248,7 +250,7 @@ h1.title {
 
 .task.selected {
   transform: translateX(0.25rem);
-  z-index: 10;
+  border-left: 0.25rem solid var(--color-primary);
 }
 
 /* task content */
@@ -296,7 +298,6 @@ h1.title {
 
 .subtask:has(.subtask_checkbox:checked) {
   filter: grayscale(0.7);
-  z-index: 10;
 }
 
 .subtask .title {
