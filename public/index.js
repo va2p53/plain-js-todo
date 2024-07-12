@@ -91,7 +91,7 @@ visuallySelectTaskElement(currentTask?.id);
  */
 function onAddNewTask() {
   if (!addTaskInputElem.value) {
-    console.log("Task title is empty. Cancel new task.");
+    console.log("Task group title is empty.");
     return;
   }
 
@@ -175,12 +175,12 @@ function onConfirmSubtaskNameInput(event) {
  */
 function onAddNewSubtask() {
   if (!addSubtaskInputElem.value) {
-    console.log("Subtask title is empty.");
+    console.log("Task title is empty.");
     return;
   }
 
   if (!currentTask) {
-    console.log("Nowhere to add subtask, task is not selected.");
+    console.log("Nowhere to add task, task group is not selected.");
     return;
   }
 
@@ -274,7 +274,7 @@ function onRemoveSubtask(event) {
  */
 function onTaskTitleClick(event) {
   if (!currentTask) {
-    console.log("No actual task selected, can't change it's title.");
+    console.log("No actual task group selected, can't change it's title.");
     return;
   }
 
@@ -332,7 +332,7 @@ function changeTaskTitle(newTitle) {
  */
 function onEditSubtaskClickHandler(event) {
   if (!currentTask) {
-    console.log("No actual task selected, can't change it's subtask title.");
+    console.log("No actual task group selected, can't change it's task title.");
     return;
   }
 
@@ -827,8 +827,8 @@ function updateCurrentTaskContent() {
 
     subtasksListElem.replaceChildren(...newSubTasks);
   } else {
-    taskTitleElem.textContent = "Not selected";
-    taskStatusElem.textContent = "Not available";
+    taskTitleElem.textContent = "Выберите список";
+    taskStatusElem.textContent = "Не доступно";
     subtasksListElem.replaceChildren();
 
     taskContentElem.classList.add("hidden");
@@ -856,7 +856,7 @@ function updateTaskList() {
  */
 function updateTaskStatusElem(task) {
   const statistic = getTaskStatistic(task);
-  taskStatusElem.textContent = `Subtasks: ${statistic.total}. Done: ${statistic.done}.`;
+  taskStatusElem.textContent = `Всего: ${statistic.total}. Готово: ${statistic.done}.`;
 }
 
 /**
