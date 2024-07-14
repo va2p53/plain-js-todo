@@ -682,8 +682,9 @@ function createTaskElement(title, id) {
   buttonElem.textContent = "X";
   buttonElem.addEventListener("click", onRemoveTask);
 
-  elem.appendChild(titleElem);
-  elem.appendChild(buttonElem);
+  const children = [titleElem, buttonElem];
+
+  elem.append(...children);
 
   return elem;
 }
@@ -729,10 +730,9 @@ function createSubtaskElement(title, id, status = false) {
   buttonElem.addEventListener("click", onRemoveSubtask);
   buttonElem.textContent = "X";
 
-  elem.appendChild(checkBoxElem);
-  elem.appendChild(titleElem);
-  elem.appendChild(editButtonElem);
-  elem.appendChild(buttonElem);
+  const children = [checkBoxElem, titleElem, editButtonElem, buttonElem];
+
+  elem.append(...children);
 
   return elem;
 }

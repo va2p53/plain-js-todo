@@ -11,7 +11,7 @@
   --color-scrollbar-thumb: #333;
 
   --color-bg-3: #d496a7;
-  --color-bg-2: #F1DEDE;
+  --color-bg-2: #f1dede;
 }
 
 body {
@@ -242,6 +242,7 @@ h1.title {
   padding: 0 0.5rem;
   overflow-x: hidden;
   text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 .task button {
@@ -305,6 +306,7 @@ h1.title {
   padding: 0 0.5rem;
   overflow-x: hidden;
   text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 .subtask button,
