@@ -22,29 +22,29 @@
     <div id="root">
       <h1 class="title">Менеджер задач</h1>
       <div class="content">
-        <div class="tasks">
+        <div class="task-list-menu">
           <div class="add-task">
             <input
               type="text"
               placeholder="Название нового списка..."
-              class="add-task-input"
+              class="add-task-list-input"
             />
-            <button class="add-task-button">Новый список задач</button>
+            <button class="add-task-list-button">Новый список задач</button>
           </div>
-          <ul class="tasks-list"></ul>
+          <ul class="task-list-catalog"></ul>
         </div>
-        <div class="task-content hidden">
+        <div class="task-list-content hidden">
           <h2 class="title"></h2>
           <h3 class="status"></h3>
-          <div class="add-subtask">
+          <div class="add-task">
             <input
               type="text"
               placeholder="Название новой задачи..."
-              class="add-subtask-input"
+              class="add-task-input"
             />
-            <button class="add-subtask-button">Новая задача</button>
+            <button class="add-task-button">Новая задача</button>
           </div>
-          <ul class="subtasks-list"></ul>
+          <ul class="task-list-tasks"></ul>
         </div>
       </div>
     </div>

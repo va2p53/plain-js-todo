@@ -1,24 +1,24 @@
 /**
- * Subtask of a task.
- * @typedef {Object} Subtask
- * @property {boolean} status - indicates if subtask is done
- * @property {string} title - title of subtask
+ * Task .
+ * @typedef {Object} Task
+ * @property {boolean} status - indicates if task is done
+ * @property {string} title - title of task
  * @property {string} id - unique id
  */
 
 /**
- * A record of task.
- * @typedef {Object} Task
- * @property {string} title - title of a task
- * @property {Subtask[]} subtasks - array of subtasks
+ * A list of tasks.
+ * @typedef {Object} TaskList
+ * @property {string} title - title of a task list
+ * @property {Task[]} tasks - array of tasks
  * @property {string} id - unique id
  */
 
 /**
  * State saved into local storage
  * @typedef {Object} SavedState
- * @property {number} currentTaskIndex = index of last selected task
- * @property {Task[]} tasks - last task list
+ * @property {number} currentTaskListIndex = index of last selected task list
+ * @property {TaskList[]} taskListCatalog - last task list
  */
 
 /**
@@ -28,54 +28,54 @@
  */
 
 /**
- * @type {Task[]}
+ * @type {TaskList[]}
  */
-let tasks = [];
+let taskListCatalog = [];
 
 /**
  * @type {number}
  */
-let currentTaskIndex = -1;
+let currentTaskListIndex = -1;
 
-const APP_ID = "TASKS_MANANGER_V1_B0828055";
+const APP_ID = "TASKS_MANANGER_V1_B0828025";
 
 //constant selectors
 /**@type {HTMLDivElement} */
-const tasksMenuElem = document.querySelector(".tasks");
+const taskListMenuElem = document.querySelector(".task-list-menu");
 /**@type {HTMLButtonElement} */
-const addTaskButtonElem = tasksMenuElem.querySelector(".add-task-button");
-/**@type {HTMLInputElement} */
-const addTaskInputElem = tasksMenuElem.querySelector(".add-task-input");
-/**@type {HTMLUListElement} */
-const tasksListElem = tasksMenuElem.querySelector(".tasks-list");
-
-/**@type {HTMLDivElement} */
-const taskContentElem = document.querySelector(".task-content");
-/**@type {HTMLUListElement} */
-const subtasksListElem = taskContentElem.querySelector(".subtasks-list");
-/**@type {HTMLHeadingElement} */
-const taskTitleElem = taskContentElem.querySelector(":scope > .title");
-/**@type {HTMLButtonElement} */
-const changeTaskTitleButtonElem =
-  taskContentElem.querySelector(".change-task-title");
-/**@type {HTMLHeadingElement} */
-const taskStatusElem = taskContentElem.querySelector(".status");
-/**@type {HTMLButtonElement} */
-const addSubtaskButtonElem = taskContentElem.querySelector(
-  ".add-subtask-button"
+const addTaskListButtonElem = taskListMenuElem.querySelector(
+  ".add-task-list-button"
 );
 /**@type {HTMLInputElement} */
-const addSubtaskInputElem = taskContentElem.querySelector(".add-subtask-input");
+const addTaskListInputElem = taskListMenuElem.querySelector(
+  ".add-task-list-input"
+);
+/**@type {HTMLUListElement} */
+const taskListCatalogElem =
+  taskListMenuElem.querySelector(".task-list-catalog");
+
+/**@type {HTMLDivElement} */
+const taskListContentElem = document.querySelector(".task-list-content");
+/**@type {HTMLUListElement} */
+const taskListElem = taskListContentElem.querySelector(".task-list-tasks");
+/**@type {HTMLHeadingElement} */
+const taskListTitleElem = taskListContentElem.querySelector(":scope > .title");
+/**@type {HTMLHeadingElement} */
+const taskListStatusElem = taskListContentElem.querySelector(".status");
+/**@type {HTMLButtonElement} */
+const addTaskButtonElem = taskListContentElem.querySelector(".add-task-button");
+/**@type {HTMLInputElement} */
+const addTaskInputElem = taskListContentElem.querySelector(".add-task-input");
 
 //constant events
 
-addTaskButtonElem.addEventListener("click", onAddNewTask);
+addTaskListButtonElem.addEventListener("click", onClickNewTaskListButton);
+addTaskListInputElem.addEventListener("keydown", onConfirmTaskListNameInput);
+
+addTaskButtonElem.addEventListener("click", onClickNewTaskButton);
 addTaskInputElem.addEventListener("keydown", onConfirmTaskNameInput);
 
-addSubtaskButtonElem.addEventListener("click", onAddNewSubtask);
-addSubtaskInputElem.addEventListener("keydown", onConfirmSubtaskNameInput);
-
-taskTitleElem.addEventListener("click", onTaskTitleClick);
+taskListTitleElem.addEventListener("click", onTaskListTitleClick);
 
 // load state from store
 
@@ -87,61 +87,60 @@ initializeContent();
 function initializeContent() {
   loadTasksFromLocalStore();
   updateTaskList();
-  updateCurrentTaskContent();
-  visuallySelectTaskElement(getTask(currentTaskIndex)?.id);
+  updateTaskListContentElement();
+  selectTaskListElement(getTaskList(currentTaskListIndex)?.id);
 }
 
 /**
- * Handles adding of new task to the task list
+ * Handles creation of new task list
  */
-function onAddNewTask() {
-  if (!addTaskInputElem.value) {
-    console.log("Task group title is empty.");
+function onClickNewTaskListButton() {
+  createTaskList();
+}
+
+/**
+ * Handles creation of new task list if enter was pressed in title input
+ * @param {Event} event keypress event
+ */
+function onConfirmTaskListNameInput(event) {
+  if (event.key === "Enter") {
+    createTaskList();
+  }
+}
+
+/**
+ * Creates new task list, updates local state and layout
+ */
+function createTaskList() {
+  if (!addTaskListInputElem.value) {
+    console.log("TaskList group title is empty.");
     return;
   }
 
-  createTask(addTaskInputElem.value);
-  addTaskInputElem.value = "";
-}
-
-/**
- * Invokes onAddNewTask if enter was pressed in target
- * @param {Event} event keypress event
- */
-function onConfirmTaskNameInput(event) {
-  if (event.key === "Enter") {
-    onAddNewTask();
-  }
-}
-
-/**
- * Creates new task as task list element and in tasks local
- * value
- * @param {string} title new task title
- */
-function createTask(title) {
-  /** @type {Task} */
-  const newTask = {
-    title: title,
+  /** @type {TaskList} */
+  const newTaskList = {
+    title: addTaskListInputElem.value,
     id: generateUid(),
-    subtasks: [],
+    tasks: [],
   };
+  preserveCurrentTaskListIndex(() => taskListCatalog.unshift(newTaskList));
 
-  const currentTaskId = getTask(currentTaskIndex).id;
-  tasks.unshift(newTask);
-  currentTaskIndex = tasks.findIndex((item) => item.id === currentTaskId);
+  const taskListElement = createTaskListElement(
+    newTaskList.title,
+    newTaskList.id
+  );
+  taskListCatalogElem.prepend(taskListElement);
+  addTaskListInputElem.value = "";
 
-  const taskElem = createTaskElement(newTask.title, newTask.id);
-  tasksListElem.prepend(taskElem);
-  saveTasksToLocalStore();
+  saveStateToLocalStore();
 }
 
 /**
- * Switches to clicked task
+ * Switches to clicked task list
  * @param {Event} event click event
  */
-function onClickTask(event) {
-  if (event.target.classList.contains("remove-task-button")) {
+function onClickTaskList(event) {
+  if (event.target.classList.contains("remove-task-list-button")) {
     return;
   }
 
@@ -151,71 +150,94 @@ function onClickTask(event) {
   const id = element.getAttribute("data-id");
 
   if (id) {
-    const task = tasks.find((item) => item.id === id);
-    const taskIndex = tasks.findIndex((item) => item.id === id);
+    const taskListIndex = taskListCatalog.findIndex((item) => item.id === id);
 
-    if (!task || taskIndex === -1) {
+    if (taskListIndex === -1) {
       return;
     }
 
-    currentTaskIndex = taskIndex;
+    currentTaskListIndex = taskListIndex;
 
-    visuallySelectTaskElement(id);
+    selectTaskListElement(id);
 
-    updateCurrentTaskContent();
-    saveTasksToLocalStore();
+    updateTaskListContentElement();
+    saveStateToLocalStore();
   }
 }
 
 /**
- * Invokes onAddNewSubtask if enter was pressed in target
+ * Handles creation of new task if enter was pressed in target
  * @param {Event} event keypress event
  */
-function onConfirmSubtaskNameInput(event) {
+function onConfirmTaskNameInput(event) {
   if (event.key === "Enter") {
-    onAddNewSubtask();
+    createTask();
   }
 }
 
 /**
- * Handles adding of new subtask to task
+ * Handles creation of new task
  */
-function onAddNewSubtask() {
-  if (!addSubtaskInputElem.value) {
-    console.log("Task title is empty.");
-    return;
-  }
-
-  if (!getTask(currentTaskIndex)) {
-    console.log("Nowhere to add task, task group is not selected.");
-    return;
-  }
-
-  createSubtask(addSubtaskInputElem.value, getTask(currentTaskIndex));
-  addSubtaskInputElem.value = "";
-
-  updateTaskStatusElem(getTask(currentTaskIndex));
-  saveTasksToLocalStore();
+function onClickNewTaskButton() {
+  createTask();
 }
 
 /**
- * Creates new subtask in task, updates task
- * @param {string} title title of new subtask
- * @param {Task} parentTask parent task
+ * Creates new task, updates layout and local state
  */
-function createSubtask(title, parentTask) {
-  /** @type {Subtask} */
-  const newSubTask = {
-    title: title,
+function createTask() {
+  if (!addTaskInputElem.value) {
+    console.log("TaskList title is empty.");
+    return;
+  }
+
+  if (!getTaskList(currentTaskListIndex)) {
+    console.log("Nowhere to add task, task list is not selected.");
+    return;
+  }
+
+  /** @type {Task} */
+  const newTask = {
+    title: addTaskInputElem.value,
     id: generateUid(),
     status: false,
   };
 
-  parentTask.subtasks.unshift(newSubTask);
+  getTaskList(currentTaskListIndex)?.tasks?.unshift(newTask);
 
-  const subtaskElem = createSubtaskElement(newSubTask.title, newSubTask.id);
+  const taskElement = createTaskElement(newTask.title, newTask.id);
 
-  subtasksListElem.prepend(subtaskElem);
+  taskListElem.prepend(taskElement);
+
+  addTaskInputElem.value = "";
+  updateTaskListStatusElem(getTaskList(currentTaskListIndex));
+  saveStateToLocalStore();
+}
+
+/**
+ * Handles removing of task list
+ * @param {Event} event button click
+ */
+function onRemoveTaskList(event) {
+  /**@type {HTMLDivElement} */
+  const taskListElement = event.currentTarget.parentElement;
+  if (taskListElement && taskListElement?.classList.contains("task-list")) {
+    const id = taskListElement.getAttribute("data-id");
+    const taskListIndex = taskListCatalog.findIndex((item) => item.id === id);
+
+    if (taskListIndex === currentTaskListIndex && currentTaskListIndex !== -1) {
+      taskListCatalog.splice(taskListIndex, 1);
+      currentTaskListIndex = -1;
+    } else if (taskListIndex !== -1) {
+      preserveCurrentTaskListIndex(() =>
+        taskListCatalog.splice(taskListIndex, 1)
+      );
+    }
+
+    taskListElement.remove();
+    updateTaskListContentElement();
+    saveStateToLocalStore();
+  }
 }
 
 /**
@@ -225,62 +247,34 @@ function createSubtask(title, parentTask) {
 function onRemoveTask(event) {
   /**@type {HTMLDivElement} */
   const taskElement = event.currentTarget.parentElement;
-  if (taskElement && taskElement?.classList.contains("task")) {
-    const id = taskElement.getAttribute("data-id");
-    const taskIndex = tasks.findIndex((item) => item.id === id);
-
-    if (taskIndex === currentTaskIndex && currentTaskIndex !== -1) {
-      tasks.splice(taskIndex, 1);
-      currentTaskIndex = -1;
-    } else if (taskIndex !== -1) {
-      const currentTaskId = getTask(currentTaskIndex).id;
-      tasks.splice(taskIndex, 1);
-      currentTaskIndex = tasks.findIndex((item) => item.id === currentTaskId);
-    }
-
-    taskElement.remove();
-    updateCurrentTaskContent();
-    saveTasksToLocalStore();
-  }
-}
-
-/**
- * Handles removing of subtask from task
- * @param {Event} event button click
- */
-function onRemoveSubtask(event) {
-  /**@type {HTMLDivElement} */
-  const subtaskElement = event.currentTarget.parentElement;
   if (
-    subtaskElement &&
-    subtaskElement?.classList.contains("subtask") &&
-    getTask(currentTaskIndex)
+    taskElement &&
+    taskElement?.classList.contains("task") &&
+    getTaskList(currentTaskListIndex)
   ) {
-    const id = subtaskElement.getAttribute("data-id");
+    const id = taskElement.getAttribute("data-id");
 
-    const subtaskIndex = getTask(currentTaskIndex).subtasks.findIndex(
+    const taskIndex = getTaskList(currentTaskListIndex).tasks.findIndex(
       (item) => item.id === id
     );
 
-    if (subtaskIndex !== -1) {
-      getTask(currentTaskIndex).subtasks.splice(subtaskIndex, 1);
+    if (taskIndex !== -1) {
+      getTaskList(currentTaskListIndex).tasks.splice(taskIndex, 1);
     }
 
-    subtaskElement.remove();
-
-    updateTaskStatusElem(getTask(currentTaskIndex));
-
-    saveTasksToLocalStore();
+    taskElement.remove();
+    updateTaskListStatusElem(getTaskList(currentTaskListIndex));
+    saveStateToLocalStore();
   }
 }
 
 /**
- * Handles task title click. Creates new input on top of it
+ * Handles task list title click. Creates new input on top of it
  * @param {Event} event
  */
-function onTaskTitleClick(event) {
-  if (!getTask(currentTaskIndex)) {
-    console.log("No actual task group selected, can't change it's title.");
+function onTaskListTitleClick(event) {
+  if (!getTaskList(currentTaskListIndex)) {
+    console.log("No task list selected, can't change it's title.");
     return;
   }
 
@@ -290,17 +284,17 @@ function onTaskTitleClick(event) {
 
   const newInput = createTextInputElement(["covering-input"]);
   newInput.addEventListener("focusout", onCancelTitleChange);
-  newInput.addEventListener("keydown", onConfirmTitleChange);
+  newInput.addEventListener("keydown", onConfirmTaskListTitleChange);
 
-  taskTitleElem.appendChild(newInput);
+  taskListTitleElem.appendChild(newInput);
   newInput.focus();
 }
 
 /**
- * Applies title change if enter pressed
+ * Applies title change to task list if enter pressed
  * @param {Event} event
  */
-function onConfirmTitleChange(event) {
+function onConfirmTaskListTitleChange(event) {
   if (event.key === "Enter") {
     if (!event.currentTarget.value) {
       console.log("Input is empty, can't change title.");
@@ -308,23 +302,23 @@ function onConfirmTitleChange(event) {
 
     changeListElementTitle(
       event.currentTarget.value,
-      getTask(currentTaskIndex).id,
-      tasksListElem,
-      tasks
+      getTaskList(currentTaskListIndex).id,
+      taskListCatalogElem,
+      taskListCatalog
     );
 
-    taskTitleElem.textContent = event.currentTarget.value;
+    taskListTitleElem.textContent = event.currentTarget.value;
 
-    saveTasksToLocalStore();
+    saveStateToLocalStore();
     event.currentTarget.remove();
   }
 }
 
 /**
- * Applies title change if enter pressed
+ * Applies title change to task if enter pressed
  * @param {Event} event
  */
-function onConfirmSubtaskTitleChange(event) {
+function onConfirmTaskTitleChange(event) {
   if (event.key === "Enter") {
     if (!event.currentTarget.value) {
       console.log("Input is empty, can't change title.");
@@ -334,13 +328,35 @@ function onConfirmSubtaskTitleChange(event) {
     changeListElementTitle(
       event.currentTarget.value,
       id,
-      subtasksListElem,
-      getTask(currentTaskIndex).subtasks
+      taskListElem,
+      getTaskList(currentTaskListIndex).tasks
     );
 
-    saveTasksToLocalStore();
+    saveStateToLocalStore();
     event.currentTarget.remove();
   }
+}
+
+/**
+ * Handles task edit event
+ * @param {Event} event
+ */
+function onEditTaskClick(event) {
+  if (!getTaskList(currentTaskListIndex)) {
+    console.log("No task list selected, can't change it's title.");
+    return;
+  }
+
+  if (event.target !== event.currentTarget) {
+    return;
+  }
+
+  const newInput = createTextInputElement(["covering-input"]);
+  newInput.addEventListener("focusout", onCancelTitleChange);
+  newInput.addEventListener("keydown", onConfirmTaskTitleChange);
+
+  event.currentTarget.parentElement.appendChild(newInput);
+  newInput.focus();
 }
 
 /**
@@ -348,7 +364,7 @@ function onConfirmSubtaskTitleChange(event) {
  * @param {string} newTitle
  * @param {string} id
  * @param {Element} elementParent
- * @param {(Task[]|Subtask[])} elementList
+ * @param {(TaskList[]|Task[])} elementList
  */
 function changeListElementTitle(newTitle, id, elementParent, elementList) {
   const index = elementList.findIndex((item) => item.id === id);
@@ -368,28 +384,6 @@ function changeListElementTitle(newTitle, id, elementParent, elementList) {
 }
 
 /**
- * Handles subtask edit event
- * @param {Event} event
- */
-function onEditSubtaskClickHandler(event) {
-  if (!getTask(currentTaskIndex)) {
-    console.log("No actual task group selected, can't change it's task title.");
-    return;
-  }
-
-  if (event.target !== event.currentTarget) {
-    return;
-  }
-
-  const newInput = createTextInputElement(["covering-input"]);
-  newInput.addEventListener("focusout", onCancelTitleChange);
-  newInput.addEventListener("keydown", onConfirmSubtaskTitleChange);
-
-  event.currentTarget.parentElement.appendChild(newInput);
-  newInput.focus();
-}
-
-/**
  * Cancels title change and removes input
  * @param {Event} event
  */
@@ -398,24 +392,23 @@ function onCancelTitleChange(event) {
 }
 
 /**
- * Handles change of subtask status
+ * Handles change of task status
  * @param {Event} event checkbox change
  */
-function onChangeSubtaskStatus(event) {
+function onChangeTaskStatus(event) {
   const newStatus = event.currentTarget.checked;
 
-  const subtaskId = event.currentTarget.parentElement.getAttribute("data-id");
+  const taskId = event.currentTarget.parentElement.getAttribute("data-id");
 
-  const subtaskIndex = getTask(currentTaskIndex).subtasks.findIndex(
-    (item) => item.id === subtaskId
+  const taskIndex = getTaskList(currentTaskListIndex)?.tasks?.findIndex(
+    (item) => item.id === taskId
   );
 
-  if (subtaskIndex !== -1) {
-    getTask(currentTaskIndex).subtasks[subtaskIndex].status = newStatus;
+  if (taskIndex && taskIndex !== -1) {
+    getTaskList(currentTaskListIndex).tasks[taskIndex].status = newStatus;
+    updateTaskListStatusElem(getTaskList(currentTaskListIndex));
+    saveStateToLocalStore();
   }
-
-  updateTaskStatusElem(getTask(currentTaskIndex));
-  saveTasksToLocalStore();
 }
 
 /**
@@ -423,7 +416,7 @@ function onChangeSubtaskStatus(event) {
  * @param {Element} elementParent
  * @param {Element} targetElement
  * @param {string} movedElementId
- * @param {(Task[]|Subtask[])} elementList
+ * @param {(TaskList[]|Task[])} elementList
  */
 function moveItem(elementParent, targetElement, movedElementId, elementList) {
   if (!elementList) {
@@ -494,7 +487,7 @@ function onDrop(event) {
     return;
   }
 
-  const validTypes = ["task", "subtask"];
+  const validTypes = ["task-list", "task"];
 
   if (!validTypes.includes(targetType) || !validTypes.includes(payload.type)) {
     console.log("Drag'n'drop with wrong element.");
@@ -507,24 +500,30 @@ function onDrop(event) {
   }
 
   switch (targetType) {
-    case "task":
-      const currentTaskId = getTask(currentTaskIndex).id;
-      moveItem(tasksListElem, targetElement, payload.id, tasks);
-      currentTaskIndex = tasks.findIndex((item) => item.id === currentTaskId);
+    case "task-list":
+      preserveCurrentTaskListIndex(() =>
+        moveItem(
+          taskListCatalogElem,
+          targetElement,
+          payload.id,
+          taskListCatalog
+        )
+      );
+
       break;
-    case "subtask":
+    case "task":
       moveItem(
-        subtasksListElem,
+        taskListElem,
         targetElement,
         payload.id,
-        getTask(currentTaskIndex).subtasks
+        getTaskList(currentTaskListIndex).tasks
       );
       break;
     default:
       break;
   }
 
-  saveTasksToLocalStore();
+  saveStateToLocalStore();
 }
 
 /**
@@ -576,11 +575,11 @@ function onDragStart(event) {
 /**
  * Saves Tasks to localStore
  */
-function saveTasksToLocalStore() {
+function saveStateToLocalStore() {
   /** @type {SavedState} */
   const newState = {
-    tasks,
-    currentTaskIndex,
+    taskListCatalog,
+    currentTaskListIndex,
   };
   const newStateString = JSON.stringify(newState);
   localStorage.setItem(APP_ID, newStateString);
@@ -603,12 +602,12 @@ function loadTasksFromLocalStore() {
       return;
     }
 
-    if (lastState?.tasks) {
-      tasks = lastState.tasks;
+    if (lastState?.taskListCatalog) {
+      taskListCatalog = lastState?.taskListCatalog;
     }
 
-    if (lastState?.currentTaskIndex !== undefined) {
-      currentTaskIndex = lastState.currentTaskIndex;
+    if (lastState?.currentTaskListIndex !== undefined) {
+      currentTaskListIndex = lastState.currentTaskListIndex;
     }
   }
 }
@@ -619,16 +618,16 @@ function loadTasksFromLocalStore() {
  * Creates new task dom element and returns it.
  * @param {string} title task title
  * @param {string} id task uid
- * @returns new Task element
+ * @returns new TaskList element
  */
-function createTaskElement(title, id) {
+function createTaskListElement(title, id) {
   const elem = document.createElement("div");
-  elem.classList.add("task");
+  elem.classList.add("task-list");
   elem.setAttribute("data-id", id);
-  elem.setAttribute("data-type", "task");
+  elem.setAttribute("data-type", "task-list");
   elem.setAttribute("draggable", true);
   elem.setAttribute("data-tooltip", title);
-  elem.addEventListener("click", onClickTask);
+  elem.addEventListener("click", onClickTaskList);
   elem.addEventListener("dragend", onDragEnd);
   elem.addEventListener("drop", onDrop);
   elem.addEventListener("dragover", onDragOver);
@@ -641,9 +640,9 @@ function createTaskElement(title, id) {
   titleElem.textContent = title;
 
   const buttonElem = document.createElement("button");
-  buttonElem.classList.add("remove-task-button");
+  buttonElem.classList.add("remove-task-list-button");
   buttonElem.textContent = "X";
-  buttonElem.addEventListener("click", onRemoveTask);
+  buttonElem.addEventListener("click", onRemoveTaskList);
 
   const children = [titleElem, buttonElem];
 
@@ -653,17 +652,17 @@ function createTaskElement(title, id) {
 }
 
 /**
- * Creates new subtask dom element and returns it
- * @param {string} title subtask title
- * @param {string} id subtask uid
- * @param {boolean} [status=false] subtask initial status
- * @returns new Subtask element
+ * Creates new task dom element and returns it
+ * @param {string} title task title
+ * @param {string} id task uid
+ * @param {boolean} [status=false] task initial status
+ * @returns new Task element
  */
-function createSubtaskElement(title, id, status = false) {
+function createTaskElement(title, id, status = false) {
   const elem = document.createElement("div");
-  elem.classList.add("subtask");
+  elem.classList.add("task");
   elem.setAttribute("data-id", id);
-  elem.setAttribute("data-type", "subtask");
+  elem.setAttribute("data-type", "task");
   elem.setAttribute("draggable", true);
   elem.setAttribute("data-tooltip", title);
   elem.addEventListener("dragend", onDragEnd);
@@ -675,22 +674,22 @@ function createSubtaskElement(title, id, status = false) {
 
   const checkBoxElem = document.createElement("input");
   checkBoxElem.setAttribute("type", "checkbox");
-  checkBoxElem.classList.add("subtask_checkbox");
+  checkBoxElem.classList.add("task-checkbox");
   checkBoxElem.checked = status;
-  checkBoxElem.addEventListener("change", onChangeSubtaskStatus);
+  checkBoxElem.addEventListener("change", onChangeTaskStatus);
 
   const titleElem = document.createElement("div");
   titleElem.classList.add("title");
   titleElem.textContent = title;
 
   const editButtonElem = document.createElement("button");
-  editButtonElem.classList.add("edit-subtask-button");
-  editButtonElem.addEventListener("click", onEditSubtaskClickHandler);
+  editButtonElem.classList.add("edit-task-button");
+  editButtonElem.addEventListener("click", onEditTaskClick);
   editButtonElem.textContent = "E";
 
   const buttonElem = document.createElement("button");
-  buttonElem.classList.add("remove-subtask-button");
-  buttonElem.addEventListener("click", onRemoveSubtask);
+  buttonElem.classList.add("remove-task-button");
+  buttonElem.addEventListener("click", onRemoveTask);
   buttonElem.textContent = "X";
 
   const children = [checkBoxElem, titleElem, editButtonElem, buttonElem];
@@ -723,16 +722,16 @@ function generateUid() {
 }
 
 /**
- * Generates statistics of given task
- * @param {Task} task
+ * Generates statistics of given task list
+ * @param {TaskList} taskList
  * @returns statistics of task
  */
-function getTaskStatistic(task) {
+function getTaskListStatistic(taskList) {
   let statistic = { done: 0, total: 0 };
 
-  statistic.total = task.subtasks.length;
+  statistic.total = taskList.tasks.length;
 
-  task.subtasks.forEach((item) => {
+  taskList.tasks.forEach((item) => {
     if (item.status === true) {
       statistic.done += 1;
     }
@@ -766,70 +765,70 @@ function arrayMoveElement(array, sourceIndex, targetIndex) {
 }
 
 /**
- * Updates layout of current task according to current task
- * Makes task content invisible if current task is empty
+ * Updates layout of current task list, using current task index
+ * Makes task list content invisible if there is no current task list
  */
-function updateCurrentTaskContent() {
-  if (currentTaskIndex !== -1) {
-    taskContentElem.classList.remove("hidden");
+function updateTaskListContentElement() {
+  if (currentTaskListIndex !== -1 && getTaskList(currentTaskListIndex)) {
+    taskListContentElem.classList.remove("hidden");
 
-    taskTitleElem.textContent = getTask(currentTaskIndex).title;
+    taskListTitleElem.textContent = getTaskList(currentTaskListIndex).title;
 
-    const task = getTask(currentTaskIndex);
+    const taskList = getTaskList(currentTaskListIndex);
 
-    updateTaskStatusElem(task);
+    updateTaskListStatusElem(taskList);
 
-    let newSubTasks = [];
+    let newTasks = [];
 
-    task.subtasks.forEach((item) => {
-      const subtask = createSubtaskElement(item.title, item.id, item.status);
-      newSubTasks.push(subtask);
+    taskList.tasks.forEach((item) => {
+      const task = createTaskElement(item.title, item.id, item.status);
+      newTasks.push(task);
     });
 
-    subtasksListElem.replaceChildren(...newSubTasks);
+    taskListElem.replaceChildren(...newTasks);
   } else {
-    taskTitleElem.textContent = "Выберите список";
-    taskStatusElem.textContent = "Не доступно";
-    subtasksListElem.replaceChildren();
+    taskListTitleElem.textContent = "Выберите список";
+    taskListStatusElem.textContent = "Не доступно";
+    taskListElem.replaceChildren();
 
-    taskContentElem.classList.add("hidden");
+    taskListContentElem.classList.add("hidden");
   }
 }
 
 /**
- * Updates layout of tasks list according to current task list data.
+ * Updates layout of task list catalog according to current task list data.
  */
 function updateTaskList() {
   /**@type {HTMLDivElement[]} */
-  const newTasks = [];
+  const newTaskLists = [];
 
-  tasks.forEach((item) => {
-    const newTask = createTaskElement(item.title, item.id);
-    newTasks.push(newTask);
+  taskListCatalog.forEach((item) => {
+    const newTaskList = createTaskListElement(item.title, item.id);
+    newTaskLists.push(newTaskList);
   });
 
-  tasksListElem.replaceChildren(...newTasks);
+  taskListCatalogElem.replaceChildren(...newTaskLists);
 }
 
 /**
- * Updates task status element with data from task
- * @param {Task} task task to update status
+ * Updates task list status element with data from task
+ * @param {TaskList} task task to update status
  */
-function updateTaskStatusElem(task) {
-  const statistic = getTaskStatistic(task);
-  taskStatusElem.textContent = `Всего: ${statistic.total}. Готово: ${statistic.done}.`;
+function updateTaskListStatusElem(task) {
+  const statistic = getTaskListStatistic(task);
+  taskListStatusElem.textContent = `Всего: ${statistic.total}. Готово: ${statistic.done}.`;
 }
 
 /**
- * Visually selects task element in tasks list
+ * Visually selects task element in task list catalog
  * @param {string} id
  */
-function visuallySelectTaskElement(id) {
+function selectTaskListElement(id) {
   if (!id) {
     return;
   }
 
-  for (const child of tasksListElem.children) {
+  for (const child of taskListCatalogElem.children) {
     if (child.getAttribute("data-id") === id) {
       child.classList.add("selected");
     } else {
@@ -839,10 +838,25 @@ function visuallySelectTaskElement(id) {
 }
 
 /**
- * Returns reference to task from tasks
+ * Returns reference to task from taskListCatalog
  * @param {number} i taskIndex
  * @returns
  */
-function getTask(i) {
-  return tasks[i] ?? null;
+function getTaskList(i) {
+  return taskListCatalog[i] ?? null;
+}
+
+/**
+ * Memoizes current task list id, invokes callback,
+ * find new currentTaskListIndex. Returns callback result.
+ * It is intended to be used with functions that can make currentTaskIndex invalid
+ * @param {Function} callback
+ */
+function preserveCurrentTaskListIndex(callback) {
+  const currentTaskListId = getTaskList(currentTaskListIndex)?.id;
+  const res = callback();
+  currentTaskListIndex = taskListCatalog.findIndex(
+    (item) => item.id === currentTaskListId
+  );
+  return res;
 }
