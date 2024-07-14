@@ -55,6 +55,9 @@ const taskContentElem = document.querySelector(".task-content");
 const subtasksListElem = taskContentElem.querySelector(".subtasks-list");
 /**@type {HTMLHeadingElement} */
 const taskTitleElem = taskContentElem.querySelector(":scope > .title");
+/**@type {HTMLButtonElement} */
+const changeTaskTitleButtonElem =
+  taskContentElem.querySelector(".change-task-title");
 /**@type {HTMLHeadingElement} */
 const taskStatusElem = taskContentElem.querySelector(".status");
 /**@type {HTMLButtonElement} */
@@ -63,9 +66,6 @@ const addSubtaskButtonElem = taskContentElem.querySelector(
 );
 /**@type {HTMLInputElement} */
 const addSubtaskInputElem = taskContentElem.querySelector(".add-subtask-input");
-/**@type {HTMLButtonElement} */
-const changeTaskTitleButtonElem =
-  taskContentElem.querySelector(".change-task-title");
 
 //constant events
 
@@ -79,12 +79,17 @@ taskTitleElem.addEventListener("click", onTaskTitleClick);
 
 // load state from store
 
-loadTasksFromLocalStore();
-updateTaskList();
-updateCurrentTaskContent();
-visuallySelectTaskElement(currentTask?.id);
+initializeContent();
 
-// tasks
+/**
+ * Wrapper for existing functions to load saved state from store and initialize layout state from it.
+ */
+function initializeContent() {
+  loadTasksFromLocalStore();
+  updateTaskList();
+  updateCurrentTaskContent();
+  visuallySelectTaskElement(currentTask?.id);
+}
 
 /**
  * Handles adding of new task to the task list
