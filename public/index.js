@@ -17,7 +17,7 @@
 /**
  * State saved into local storage
  * @typedef {Object} SavedState
- * @property {Task} currentTask - last selected task
+ * @property {number} currentTaskIndex = index of last selected task
  * @property {Task[]} tasks - last task list
  */
 
@@ -33,9 +33,9 @@
 let tasks = [];
 
 /**
- * @type {Task}
+ * @type {number}
  */
-let currentTask = null;
+let currentTaskIndex = -1;
 
 const APP_ID = "TASKS_MANANGER_V1_B0828055";
 
@@ -88,7 +88,7 @@ function initializeContent() {
   loadTasksFromLocalStore();
   updateTaskList();
   updateCurrentTaskContent();
-  visuallySelectTaskElement(currentTask?.id);
+  visuallySelectTaskElement(getTask(currentTaskIndex)?.id);
 }
 
 /**
@@ -127,10 +127,11 @@ function createTask(title) {
     subtasks: [],
   };
 
+  const currentTaskId = getTask(currentTaskIndex).id;
   tasks.unshift(newTask);
+  currentTaskIndex = tasks.findIndex((item) => item.id === currentTaskId);
 
   const taskElem = createTaskElement(newTask.title, newTask.id);
-
   tasksListElem.prepend(taskElem);
   saveTasksToLocalStore();
 }
@@ -151,12 +152,13 @@ function onClickTask(event) {
 
   if (id) {
     const task = tasks.find((item) => item.id === id);
+    const taskIndex = tasks.findIndex((item) => item.id === id);
 
-    if (!task) {
+    if (!task || taskIndex === -1) {
       return;
     }
 
-    currentTask = task;
+    currentTaskIndex = taskIndex;
 
     visuallySelectTaskElement(id);
 
@@ -184,17 +186,15 @@ function onAddNewSubtask() {
     return;
   }
 
-  if (!currentTask) {
+  if (!getTask(currentTaskIndex)) {
     console.log("Nowhere to add task, task group is not selected.");
     return;
   }
 
-  createSubtask(addSubtaskInputElem.value, currentTask);
+  createSubtask(addSubtaskInputElem.value, getTask(currentTaskIndex));
   addSubtaskInputElem.value = "";
 
-  replaceTaskInTasks(currentTask);
-
-  updateTaskStatusElem(currentTask);
+  updateTaskStatusElem(getTask(currentTaskIndex));
   saveTasksToLocalStore();
 }
 
@@ -229,16 +229,17 @@ function onRemoveTask(event) {
     const id = taskElement.getAttribute("data-id");
     const taskIndex = tasks.findIndex((item) => item.id === id);
 
-    if (taskIndex !== -1) {
+    if (taskIndex === currentTaskIndex && currentTaskIndex !== -1) {
       tasks.splice(taskIndex, 1);
+      currentTaskIndex = -1;
+    } else if (taskIndex !== -1) {
+      const currentTaskId = getTask(currentTaskIndex).id;
+      tasks.splice(taskIndex, 1);
+      currentTaskIndex = tasks.findIndex((item) => item.id === currentTaskId);
     }
 
     taskElement.remove();
-
-    if (currentTask && currentTask.id === id) {
-      currentTask = null;
-      updateCurrentTaskContent();
-    }
+    updateCurrentTaskContent();
     saveTasksToLocalStore();
   }
 }
@@ -253,23 +254,23 @@ function onRemoveSubtask(event) {
   if (
     subtaskElement &&
     subtaskElement?.classList.contains("subtask") &&
-    currentTask
+    getTask(currentTaskIndex)
   ) {
     const id = subtaskElement.getAttribute("data-id");
 
-    const subtaskIndex = currentTask.subtasks.findIndex(
+    const subtaskIndex = getTask(currentTaskIndex).subtasks.findIndex(
       (item) => item.id === id
     );
 
     if (subtaskIndex !== -1) {
-      currentTask.subtasks.splice(subtaskIndex, 1);
+      getTask(currentTaskIndex).subtasks.splice(subtaskIndex, 1);
     }
 
     subtaskElement.remove();
 
-    replaceTaskInTasks(currentTask);
+    updateTaskStatusElem(getTask(currentTaskIndex));
 
-    updateTaskStatusElem(currentTask);
+    saveTasksToLocalStore();
   }
 }
 
@@ -278,7 +279,7 @@ function onRemoveSubtask(event) {
  * @param {Event} event
  */
 function onTaskTitleClick(event) {
-  if (!currentTask) {
+  if (!getTask(currentTaskIndex)) {
     console.log("No actual task group selected, can't change it's title.");
     return;
   }
@@ -304,25 +305,60 @@ function onConfirmTitleChange(event) {
     if (!event.currentTarget.value) {
       console.log("Input is empty, can't change title.");
     }
-    changeTaskTitle(event.currentTarget.value);
 
+    changeListElementTitle(
+      event.currentTarget.value,
+      getTask(currentTaskIndex).id,
+      tasksListElem,
+      tasks
+    );
+
+    taskTitleElem.textContent = event.currentTarget.value;
+
+    saveTasksToLocalStore();
     event.currentTarget.remove();
   }
 }
 
 /**
- * Changes task title, updates layout.
- * @param {string} newTitle
+ * Applies title change if enter pressed
+ * @param {Event} event
  */
-function changeTaskTitle(newTitle) {
-  currentTask.title = newTitle;
+function onConfirmSubtaskTitleChange(event) {
+  if (event.key === "Enter") {
+    if (!event.currentTarget.value) {
+      console.log("Input is empty, can't change title.");
+    }
+    const id = event.currentTarget.parentElement.getAttribute("data-id");
 
-  replaceTaskInTasks(currentTask);
+    changeListElementTitle(
+      event.currentTarget.value,
+      id,
+      subtasksListElem,
+      getTask(currentTaskIndex).subtasks
+    );
 
-  taskTitleElem.textContent = newTitle;
+    saveTasksToLocalStore();
+    event.currentTarget.remove();
+  }
+}
 
-  for (const child of tasksListElem.children) {
-    if (child.getAttribute("data-id") === currentTask.id) {
+/**
+ *  Changes title of an element in layout and it's list.
+ * @param {string} newTitle
+ * @param {string} id
+ * @param {Element} elementParent
+ * @param {(Task[]|Subtask[])} elementList
+ */
+function changeListElementTitle(newTitle, id, elementParent, elementList) {
+  const index = elementList.findIndex((item) => item.id === id);
+
+  if (index !== -1) {
+    elementList[index].title = newTitle;
+  }
+
+  for (const child of elementParent.children) {
+    if (child.getAttribute("data-id") === id) {
       const childTitle = child.querySelector(".title");
       if (childTitle) {
         childTitle.textContent = newTitle;
@@ -336,7 +372,7 @@ function changeTaskTitle(newTitle) {
  * @param {Event} event
  */
 function onEditSubtaskClickHandler(event) {
-  if (!currentTask) {
+  if (!getTask(currentTaskIndex)) {
     console.log("No actual task group selected, can't change it's task title.");
     return;
   }
@@ -351,48 +387,6 @@ function onEditSubtaskClickHandler(event) {
 
   event.currentTarget.parentElement.appendChild(newInput);
   newInput.focus();
-}
-
-/**
- * Applies title change if enter pressed
- * @param {Event} event
- */
-function onConfirmSubtaskTitleChange(event) {
-  if (event.key === "Enter") {
-    if (!event.currentTarget.value) {
-      console.log("Input is empty, can't change title.");
-    }
-    const id = event.currentTarget.parentElement.getAttribute("data-id");
-
-    changeSubtaskTitle(event.currentTarget.value, id);
-
-    event.currentTarget.remove();
-  }
-}
-
-/**
- *
- * @param {string} newTitle
- * @param {string} subtaskId
- */
-function changeSubtaskTitle(newTitle, subtaskId) {
-  const subtaskIndex = currentTask.subtasks.findIndex(
-    (item) => item.id === subtaskId
-  );
-
-  if (subtaskIndex !== -1) {
-    currentTask.subtasks[subtaskIndex].title = newTitle;
-
-    replaceTaskInTasks(currentTask);
-  }
-
-  for (const child of subtasksListElem.children) {
-    if (child.getAttribute("data-id") === subtaskId) {
-      const title = child.querySelector(".title");
-      title.textContent = newTitle;
-    }
-  }
-  saveTasksToLocalStore();
 }
 
 /**
@@ -412,96 +406,55 @@ function onChangeSubtaskStatus(event) {
 
   const subtaskId = event.currentTarget.parentElement.getAttribute("data-id");
 
-  const subtaskIndex = currentTask.subtasks.findIndex(
+  const subtaskIndex = getTask(currentTaskIndex).subtasks.findIndex(
     (item) => item.id === subtaskId
   );
 
   if (subtaskIndex !== -1) {
-    currentTask.subtasks[subtaskIndex].status = newStatus;
-
-    replaceTaskInTasks(currentTask);
+    getTask(currentTaskIndex).subtasks[subtaskIndex].status = newStatus;
   }
 
-  updateTaskStatusElem(currentTask);
+  updateTaskStatusElem(getTask(currentTaskIndex));
   saveTasksToLocalStore();
 }
 
 /**
- * Reinserts task under element in layout and task list
- * @param {HTMLDivElement} element
- * @param {string} insertedTaskId
+ * Moves element with elementId to position under targetElement in layout and in it's saved list.
+ * @param {Element} elementParent
+ * @param {Element} targetElement
+ * @param {string} movedElementId
+ * @param {(Task[]|Subtask[])} elementList
  */
-function reinsertTaskUnder(element, insertedElementId) {
-  const id = element.getAttribute("data-id");
+function moveItem(elementParent, targetElement, movedElementId, elementList) {
+  if (!elementList) {
+    console.log("Missing list of elements");
+  }
 
-  const indexOfInserted = tasks.findIndex(
-    (item) => item.id === insertedElementId
+  const id = targetElement.getAttribute("data-id");
+
+  const indexOfInserted = elementList.findIndex(
+    (item) => item.id === movedElementId
   );
-  const indexOfTarget = tasks.findIndex((item) => item.id === id);
-  console.log(indexOfInserted, indexOfTarget);
+
+  const indexOfTarget = elementList.findIndex((item) => item.id === id);
 
   if (indexOfInserted === indexOfTarget + 1) {
     console.log("Elements are on required positions");
     return;
   }
 
-  const insertedElement = tasksListElem.querySelector(
-    `:scope > [data-id="${insertedElementId}"]`
+  const insertedElement = elementParent.querySelector(
+    `:scope > [data-id="${movedElementId}"]`
   );
 
-  element.after(insertedElement);
+  targetElement.after(insertedElement);
 
-  if (indexOfInserted > indexOfTarget) {
-    // Account that we are supposed to insert element before
-    // otherwise we just insert it on same position as target.
-    // Which in layout looks like it inserted after target when
-    // Target index lower than index of element
-    arrayMoveElement(tasks, indexOfInserted, indexOfTarget + 1);
-  } else {
-    arrayMoveElement(tasks, indexOfInserted, indexOfTarget);
-  }
+  // Offset is to account for that we are supposed to insert element after target element, i.e. shimmy into new place
+  // not just swap with another element. Without it after layout loaded from saved state (on reload) it will look like
+  // element was inserted before target element when target index lower than index of moved element
+  const offset = indexOfInserted > indexOfTarget ? 1 : 0;
 
-  saveTasksToLocalStore();
-}
-
-/**
- * Reinserts subtask under another task in layout and in tasks.
- * @param {HTMLDivElement} element
- * @param {string} insertedSubtaskId
- */
-function reinsertSubtaskUnder(element, insertedElementId) {
-  const id = element.getAttribute("data-id");
-
-  const indexOfInserted = currentTask.subtasks.findIndex(
-    (item) => item.id === insertedElementId
-  );
-  const indexOfTarget = currentTask.subtasks.findIndex(
-    (item) => item.id === id
-  );
-
-  if (indexOfInserted === indexOfTarget + 1) {
-    console.log("Elements are on required positions");
-    return;
-  }
-
-  const insertedElement = subtasksListElem.querySelector(
-    `:scope > [data-id="${insertedElementId}"]`
-  );
-
-  element.after(insertedElement);
-
-  if (indexOfInserted > indexOfTarget) {
-    // Account that we are supposed to insert element before
-    // otherwise we just insert it on same position as target.
-    // Which in layout looks like it inserted after target when
-    // Target index lower than index of element
-    arrayMoveElement(currentTask.subtasks, indexOfInserted, indexOfTarget + 1);
-  } else {
-    arrayMoveElement(currentTask.subtasks, indexOfInserted, indexOfTarget);
-  }
-
-  replaceTaskInTasks(currentTask);
-  saveTasksToLocalStore();
+  arrayMoveElement(elementList, indexOfInserted, indexOfTarget + offset);
 }
 
 // Drag'n'drop
@@ -515,8 +468,9 @@ function onDragEnd(event) {
 }
 
 /**
- * Handles drop event. Invokes functions to move element in
- * appropriate list.
+ * Handles drop event. Invokes functions to move element to new place in
+ * appropriate list. Received payload has ID of moved element and it's "type" to check
+ * in which lists it is allowed.
  * @param {DragEvent} event
  */
 function onDrop(event) {
@@ -554,14 +508,23 @@ function onDrop(event) {
 
   switch (targetType) {
     case "task":
-      reinsertTaskUnder(targetElement, payload.id);
+      const currentTaskId = getTask(currentTaskIndex).id;
+      moveItem(tasksListElem, targetElement, payload.id, tasks);
+      currentTaskIndex = tasks.findIndex((item) => item.id === currentTaskId);
       break;
     case "subtask":
-      reinsertSubtaskUnder(targetElement, payload.id);
+      moveItem(
+        subtasksListElem,
+        targetElement,
+        payload.id,
+        getTask(currentTaskIndex).subtasks
+      );
       break;
     default:
       break;
   }
+
+  saveTasksToLocalStore();
 }
 
 /**
@@ -617,7 +580,7 @@ function saveTasksToLocalStore() {
   /** @type {SavedState} */
   const newState = {
     tasks,
-    currentTask,
+    currentTaskIndex,
   };
   const newStateString = JSON.stringify(newState);
   localStorage.setItem(APP_ID, newStateString);
@@ -640,12 +603,12 @@ function loadTasksFromLocalStore() {
       return;
     }
 
-    if (lastState?.currentTask) {
-      currentTask = lastState.currentTask;
-    }
-
     if (lastState?.tasks) {
       tasks = lastState.tasks;
+    }
+
+    if (lastState?.currentTaskIndex !== undefined) {
+      currentTaskIndex = lastState.currentTaskIndex;
     }
   }
 }
@@ -779,15 +742,6 @@ function getTaskStatistic(task) {
 }
 
 /**
- * Looks through Tasks for task with matching id
- * and replaces it.
- * @param {Task} task
- */
-function replaceTaskInTasks(task) {
-  tasks = tasks.map((item) => (item.id === task.id ? task : item));
-}
-
-/**
  * Moves element in array from one index to another.
  * Mutates array. Does nothing if any of indexes outside of
  * array's bounds or equal to each other.
@@ -816,16 +770,18 @@ function arrayMoveElement(array, sourceIndex, targetIndex) {
  * Makes task content invisible if current task is empty
  */
 function updateCurrentTaskContent() {
-  if (currentTask) {
+  if (currentTaskIndex !== -1) {
     taskContentElem.classList.remove("hidden");
 
-    taskTitleElem.textContent = currentTask.title;
+    taskTitleElem.textContent = getTask(currentTaskIndex).title;
 
-    updateTaskStatusElem(currentTask);
+    const task = getTask(currentTaskIndex);
+
+    updateTaskStatusElem(task);
 
     let newSubTasks = [];
 
-    currentTask.subtasks.forEach((item) => {
+    task.subtasks.forEach((item) => {
       const subtask = createSubtaskElement(item.title, item.id, item.status);
       newSubTasks.push(subtask);
     });
@@ -880,4 +836,13 @@ function visuallySelectTaskElement(id) {
       child.classList.remove("selected");
     }
   }
+}
+
+/**
+ * Returns reference to task from tasks
+ * @param {number} i taskIndex
+ * @returns
+ */
+function getTask(i) {
+  return tasks[i] ?? null;
 }
