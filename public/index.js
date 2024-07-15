@@ -404,8 +404,9 @@ function onChangeTaskStatus(event) {
     (item) => item.id === taskId
   );
 
-  if (taskIndex && taskIndex !== -1) {
+  if (taskIndex !== undefined && taskIndex !== -1) {
     getTaskList(currentTaskListIndex).tasks[taskIndex].status = newStatus;
+
     updateTaskListStatusElem(getTaskList(currentTaskListIndex));
     saveStateToLocalStore();
   }
